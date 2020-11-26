@@ -163,7 +163,7 @@ public class JsoupWordCount {
 
 	public static void main(String... args) throws IOException, GeneralSecurityException {
 //		countWordsFromUrl("https://developers.google.com/web/fundamentals/web-components/customelements");
-		countCHWordsFromUrl();
+//		countCHWordsFromUrl();
 	}
 
 }

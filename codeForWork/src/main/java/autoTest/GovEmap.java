@@ -81,21 +81,18 @@ public class GovEmap {
 //		List<WebElement> cells = driver.findElement(By.xpath(landQryTablexpath[1])).findElements(By.xpath(tableXpath[1]));
 		for (WebElement tr : combo) {
 			List<WebElement> tds = tr.findElements(By.tagName("td"));
-			
-			
+
 			if (tds.size() >= 2 && excelHeaders.containsKey(tds.get(0).getText())) {
 				Item item = row.new Item();
 				item.column = tds.get(0).getText();
 				item.cell = tds.get(1).getText();
 				row.addItem(item);
-				System.out.println("in__"+ row.getItems());
+				System.out.println("in__" + row.getItems());
 				if (item.column.equals("公告土地現值")) {
 					break;
 				}
 			}
 		}
-
-		
 
 	}
 
@@ -211,19 +208,21 @@ public class GovEmap {
 		boolean click = false;
 		for (String eleId : setLocationElementId) {
 			for (WebElement option : (new Select(submenu.findElement(By.id(eleId)))).getOptions()) {
-				if (location[countEleId] != null && option.getText().trim().equals(ConvertTai(location[countEleId]))) {
+				if (location[countEleId] != null && (option.getText().trim().equals(ConvertTai(location[countEleId])))
+						|| option.getText().trim().equals(ConvertTai(location[countEleId].substring(0, location[countEleId].indexOf("段")+1)))) {
 					option.click();
-					click=true;
+					click = true;
 					Thread.sleep(500);
 					++countEleId;
 				}
 			}
 		}
-		//跑完台東新增，尚未測試
-		if(click == false) {
+		// 跑完台東新增，尚未測試
+		if (click == false) {
 			for (String eleId : setLocationElementId) {
 				for (WebElement option : (new Select(submenu.findElement(By.id(eleId)))).getOptions()) {
-					if (location[countEleId] != null && option.getText().trim().contains(ConvertTai(location[countEleId]))) {
+					if (location[countEleId] != null
+							&& option.getText().trim().contains(ConvertTai(location[countEleId]))) {
 						option.click();
 						Thread.sleep(500);
 						++countEleId;
@@ -231,7 +230,7 @@ public class GovEmap {
 				}
 			}
 		}
-		
+
 // "landcode"
 		if (location[3] != null) {
 			driver.findElement(By.id("landcode")).sendKeys(location[3].replace("號", ""));

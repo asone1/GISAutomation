@@ -145,7 +145,7 @@ public class scrappy {
 			location_spec = location_spec.replace(location[1], "");
 		}
 
-		location[2] = location_spec.substring(0, (location_spec.indexOf("段")) + 1);
+		location[2] = location_spec.substring(0, (location_spec.lastIndexOf("段")) + 1);
 		location[3] = location_spec.substring((location_spec.lastIndexOf("段")) + 1, location_spec.length());
 
 		return location;
