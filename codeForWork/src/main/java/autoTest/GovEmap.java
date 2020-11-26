@@ -1,16 +1,19 @@
 package autoTest;
 
-import static autoTest.GovEmap.openInfo;
-import static autoTest.GovEmap.startMap;
 import static autoTest.commonMethod.ConvertTai;
 import static autoTest.commonMethod.relativeSymbol;
-import static autoTest.seleniumCommon.*;
-import static autoTest.scrappy.*;
+import static autoTest.scrappy.defaultPath;
+import static autoTest.scrappy.zoomIn;
+import static autoTest.scrappy.zoomOut;
+import static autoTest.seleniumCommon.clickPopUP;
+import static autoTest.seleniumCommon.exeJs;
+import static autoTest.seleniumCommon.jsClick;
+import static autoTest.seleniumCommon.mustDo;
+import static autoTest.seleniumCommon.takeSnapShot;
+import static autoTest.seleniumCommon.waitAndClick;
 
 import java.util.List;
 import java.util.Map;
-
-import javax.swing.filechooser.FileSystemView;
 
 import org.apache.commons.lang.StringUtils;
 import org.openqa.selenium.By;
@@ -81,7 +84,6 @@ public class GovEmap {
 //		List<WebElement> cells = driver.findElement(By.xpath(landQryTablexpath[1])).findElements(By.xpath(tableXpath[1]));
 		for (WebElement tr : combo) {
 			List<WebElement> tds = tr.findElements(By.tagName("td"));
-			
 			
 			if (tds.size() >= 2 && excelHeaders.containsKey(tds.get(0).getText())) {
 				Item item = row.new Item();
@@ -216,6 +218,7 @@ public class GovEmap {
 					click=true;
 					Thread.sleep(500);
 					++countEleId;
+					 break;
 				}
 			}
 		}
@@ -227,6 +230,7 @@ public class GovEmap {
 						option.click();
 						Thread.sleep(500);
 						++countEleId;
+						break;
 					}
 				}
 			}
