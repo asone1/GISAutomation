@@ -173,7 +173,6 @@ public class GovEmap {
 
 	public static WebDriver startMap() throws InterruptedException {
 		System.setProperty("webdriver.chrome.driver", defaultPath + "/chromedriver.exe");
-
 		WebDriver driver = new ChromeDriver();
 		driver.get("https://maps.nlsc.gov.tw/T09/mapshow.action?In_type=web");
 		driver.manage().window().maximize();
@@ -209,15 +208,30 @@ public class GovEmap {
 		// 開始再定位查詢輸入資料
 		WebElement submenu = driver.findElement(By.id("submenu_pos"));
 		int countEleId = 0;
+		boolean click = false;
 		for (String eleId : setLocationElementId) {
 			for (WebElement option : (new Select(submenu.findElement(By.id(eleId)))).getOptions()) {
-				if (location[countEleId] != null && option.getText().contains(ConvertTai(location[countEleId]))) {
+				if (location[countEleId] != null && option.getText().trim().equals(ConvertTai(location[countEleId]))) {
 					option.click();
+					click=true;
 					Thread.sleep(500);
 					++countEleId;
 				}
 			}
 		}
+		//跑完台東新增，尚未測試
+		if(click == false) {
+			for (String eleId : setLocationElementId) {
+				for (WebElement option : (new Select(submenu.findElement(By.id(eleId)))).getOptions()) {
+					if (location[countEleId] != null && option.getText().trim().contains(ConvertTai(location[countEleId]))) {
+						option.click();
+						Thread.sleep(500);
+						++countEleId;
+					}
+				}
+			}
+		}
+		
 // "landcode"
 		if (location[3] != null) {
 			driver.findElement(By.id("landcode")).sendKeys(location[3].replace("號", ""));

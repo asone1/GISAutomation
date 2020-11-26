@@ -4,6 +4,7 @@ import static autoTest.Jurdical.*;
 import static autoTest.scrappy.*;
 import static autoTest.seleniumCommon.*;
 import static autoTest.GovEmap.*;
+import static autoTest.AddJurdicalLinkToExcel.*;
 import java.awt.AWTException;
 import java.awt.Robot;
 import java.io.File;
@@ -91,17 +92,20 @@ public class test {
 	
 
 	public static void main(String[] args) throws Exception {
-		Excel excel = Excel.loadExcel(defaultPath + "/" + fileName);
+		Excel excel = Excel.loadExcel(defaultPath + "/" + "法拍地查詢資料結果.xls");
 		excel.assignSheet(0);
-		for (int index = 1; index < excel.getCurSheetRowCnt(); ++index) {
-			String address = excel.assignRow(index).getCell(12).getAbsoluteStringCellValue();
-			if (StringUtils.isNotBlank(address)) {
-				String county = excel.assignRow(index).getCell(4).getAbsoluteStringCellValue();
-				System.out.println(AddressBuilder(county, address));
-				
-			}
-
-		}
+		AddJurdicalLink(excel, fileName);
+		
+//		for (int index = 1; index < excel.getCurSheetRowCnt(); ++index) {
+//			String address = excel.assignRow(index).getCell(0).getAbsoluteStringCellValue();
+//			if (StringUtils.isNotBlank(address) && address.equals("108_022682_80")) {
+////				String county = excel.assignRow(index).getCell(4).getAbsoluteStringCellValue();
+//				System.out.println("外面"+ excel.assignRow(index).getCell(0).getCellStyle().getFillForegroundColor());
+//				
+//			}
+//
+//			
+//		}
 
 	}
 }

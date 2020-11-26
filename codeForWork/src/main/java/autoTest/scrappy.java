@@ -29,6 +29,8 @@ public class scrappy {
 	private static ExcelValue excelValue;
 	static Map<String, Integer> jurdicalHeader;
 	final static String address_col_name = "地址";
+	final static String unit_price_name = "萬/1坪";
+	
 //	台南一般.xls
 	public final static String fileName = "法拍地查詢資料.xls";
 	public final static String defaultPath = FileSystemView.getFileSystemView().getHomeDirectory().getPath();
@@ -50,7 +52,7 @@ public class scrappy {
 		return id + (StringUtils.isBlank(price) ? "" : ("_" + price));
 	}
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InterruptedException {
 		jurdicalHeader = new HashMap<>();
 		excelValue = new ExcelValue(defaultPath + "/excelHeader.xlsx");
 		Excel jurdicalResult = Excel.loadExcel(defaultPath + "/" + fileName);
@@ -65,8 +67,16 @@ public class scrappy {
 			String location[] = new String[4];
 			String address = jurdicalResult.assignSheet(0).assignRow(rowCount)
 					.assignCell(jurdicalHeader.get(address_col_name)).getCellValue().toString();
+			Double unit_Price = null;
+			
 			// 持分為全部才搜尋
-			if (StringUtils.isNotBlank(address)) {
+			try {
+				 unit_Price = Double.parseDouble(jurdicalResult.assignSheet(0).assignRow(rowCount)
+							.assignCell(jurdicalHeader.get(unit_price_name)).getCellValue().toString());
+			}catch(Exception e) {
+				e.printStackTrace();
+			}
+			if (StringUtils.isNotBlank(address) && unit_Price!= null && unit_Price<=0.9) {
 				Row row = excelValue.new Row();
 				// for every cell (將法拍資料放入item中)
 				for (Entry<String, Integer> map : jurdicalHeader.entrySet()) {
@@ -106,17 +116,13 @@ public class scrappy {
 				} else {
 					fileToSave = excelValue.itemsToExcel("查詢結果");
 				}
+				
+//				AddJurdicalLink(fileToSave, fileName);
 
 				try {
 					String filePath = defaultPath + "/" + fileName.replace(".xls", "") + "結果.xls";
 					FileOutputStream out = new FileOutputStream(new File(filePath));
 					fileToSave.getWorkbook().write(out);
-//					try {
-//						AddJurdicalLink(fileToSave);
-//					} catch (InterruptedException e) {
-//						// TODO Auto-generated catch block
-//						e.printStackTrace();
-//					}
 					out.close();
 				} catch (IOException e) {
 					// TODO Auto-generated catch block

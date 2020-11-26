@@ -46,6 +46,10 @@ public class Excel {
 	public Sheet getSheet() {
 		return curSheet;
 	}
+	
+	public Row getCurRow() {
+		return curRow;
+	}
 
 	public enum ExcelType {
 
@@ -306,10 +310,8 @@ public class Excel {
 	}
 	
 	public Cell getCurCell() {
-		if(this.curCell!=null) {
 			return this.curCell;
-		}
-		return null;
+	
 	}
 
 	public void setAutoFilter(int firstRow, int lastRow, int firstCol, int lastCol) {

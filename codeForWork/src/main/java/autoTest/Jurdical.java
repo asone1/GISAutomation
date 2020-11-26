@@ -14,7 +14,7 @@ import static autoTest.commonMethod.newLine;;
 
 public class Jurdical {
 	// private static String[] court = { "臺中", "新竹" };
-	private static String[] court = {  "台東" };
+	private static String[] court = { "嘉義" };
 
 	public static void main(String... args) throws InterruptedException {
 		visitJurdical();
@@ -39,35 +39,67 @@ public class Jurdical {
 		return completeAddress.toString();
 	}
 
-	public static String searchById(WebDriver driver,String id, String address) throws InterruptedException {
+	/*
+	 * page1
+	 */
+	// 房屋
+	public static By house = By.xpath("//input[@value='C52']");
+	// 土地
+	public static By land = By.xpath("//input[@value='C51']");
+	public static By confirm2 = By.xpath("//input[@class='small']");
+	/*
+	 * page2
+	 */
+	// 一般
+	public static By goBid = By.xpath("//input[@value='1']");
+	// 應買
+	public static By goBuy = By.xpath("//input[@value='4']");
+	/*
+	 * page3
+	 */
+	public static By bidId = By.id("crmno");
+	public static By confirm = By.xpath("//input[@value='確定']");
+
+	// 0:一般 & 1:應買
+	public static String searchById(WebDriver driver, String id, String address, boolean landType)
+			throws InterruptedException {
+
+		setCourt(driver, address);
+
+		// 土地
+		driver.findElement(land).click();
 		
+		if (landType) {
+			driver.findElement(goBuy).click();
+		}
+		driver.findElement(confirm2).submit();
+		driver.findElement(bidId).sendKeys(id);
+		driver.findElement(confirm).submit();
+
+		List<WebElement> links = driver.findElements(By.tagName("a"));
+		for (WebElement link : links) {
+			if (link.getText().contains("段")
+					|| link.getText().contains("縣")) {
+				return link.getAttribute("href");
+			}
+		}
+
+		return "";
+	}
+
+	public static void setCourt(WebDriver driver, String countyName) throws InterruptedException {
 		Select courtSelect = new Select(driver.findElement(By.name("court")));
 		List<WebElement> options = courtSelect.getOptions();
 
 		for (WebElement option : options) {
-			if (option.getText().contains("臺南")) {
-				option.click();break;
+			if (option.getText().contains(countyName.substring(0, 2))) {
+				option.click();
+				break;
 			}
 		}
 
 		Thread.sleep(200);
 		driver.findElement(By.tagName("input")).submit();
-		// 土地
-		driver.findElement(By.xpath("//input[@value='C51']")).click();
-		driver.findElement(By.xpath("//input[@class='small']")).submit();
-
-		driver.findElement(By.id("crmno")).sendKeys(id);
-		driver.findElement(By.xpath("//input[@value='確定']")).submit();
-
-		List<WebElement> links = driver.findElements(By.tagName("a"));
-		for (WebElement link : links) {
-			if (link.getText().contains(address.substring(address.lastIndexOf("段") + 1, address.indexOf("號")))) {
-				
-				return link.getAttribute("href");
-			}
-		}
-		
-		return "";
 	}
 
 	public static WebDriver startJurdical() throws InterruptedException {
@@ -79,13 +111,9 @@ public class Jurdical {
 
 	public static void visitJurdical() throws InterruptedException {
 		System.setProperty("webdriver.chrome.driver", defaultPath + "/chromedriver.exe");
-
-//	    JavascriptExecutor js = (JavascriptExecutor)driver;
-//	    driver.get("http://www.google.com/");
-		// https://aomp.judicial.gov.tw/abbs/wkw/WHD2A00.jsp
 		for (String s : court) {
 			s = ConvertTai(s);
-			outer: for (int i = 0; i < 3; ++i) {
+			outer: for (int i = 0; i < 2; ++i) {
 				WebDriver driver = new ChromeDriver();
 				driver.get("https://aomp.judicial.gov.tw/abbs/wkw/WHD2A00.jsp");
 				Select courtSelect = new Select(driver.findElement(By.name("court")));
@@ -99,9 +127,9 @@ public class Jurdical {
 
 						driver.findElement(By.xpath("//input[@value='C51']")).click();
 						if (i % 2 == 0)
-							driver.findElement(By.xpath("//input[@value='1']")).click();
+							driver.findElement(goBuy).click();
 						else
-							driver.findElement(By.xpath("//input[@value='4']")).click();
+							driver.findElement(goBid).click();
 
 						driver.findElement(By.xpath("//input[@class='small']")).submit();
 						driver.findElement(By.xpath("//input[@value='確定']")).submit();
