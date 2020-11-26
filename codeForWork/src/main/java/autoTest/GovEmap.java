@@ -225,7 +225,7 @@ public class GovEmap {
 			for (String eleId : setLocationElementId) {
 				for (WebElement option : (new Select(submenu.findElement(By.id(eleId)))).getOptions()) {
 					if (location[countEleId] != null
-							&& option.getText().trim().contains(ConvertTai(location[countEleId]))) {
+							&& option.getText().trim().contains(ConvertTai(location[countEleId].substring(0, location[countEleId].indexOf("段")+1)))) {
 						option.click();
 						Thread.sleep(500);
 						++countEleId;
