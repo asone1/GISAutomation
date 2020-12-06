@@ -1,9 +1,9 @@
 package autoTest;
 
-import static autoTest.Jurdical.*;
 import static autoTest.scrappy.*;
-import static autoTest.seleniumCommon.*;
-import static autoTest.GovEmap.*;
+import static CommonAPI.seleniumCommon.*;
+import static OnlineLandSearch.GovEmap.*;
+import static OnlineLandSearch.Jurdical.*;
 import static autoTest.AddJurdicalLinkToExcel.*;
 import java.awt.AWTException;
 import java.awt.Robot;

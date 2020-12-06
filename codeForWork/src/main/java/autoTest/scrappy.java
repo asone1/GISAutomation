@@ -1,9 +1,10 @@
 package autoTest;
 
-import static autoTest.GovEmap.search;
-import static autoTest.commonMethod.*;
-import static autoTest.Jurdical.*;
-import static autoTest.AddJurdicalLinkToExcel.*;
+import static CommonAPI.ChineseAddressHandler.newLine;
+import static OnlineLandSearch.GovEmap.locationToArr;
+import static OnlineLandSearch.GovEmap.search;
+import static OnlineLandSearch.Jurdical.AddressBuilder;
+
 import java.awt.AWTException;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
@@ -20,8 +21,9 @@ import javax.swing.filechooser.FileSystemView;
 
 import org.apache.commons.lang.StringUtils;
 
-import autoTest.ExcelValue.Row;
-import autoTest.ExcelValue.Row.Item;
+import dataStructure.ExcelValue;
+import dataStructure.ExcelValue.Row;
+import dataStructure.ExcelValue.Row.Item;
 import excel.Excel;
 
 public class scrappy {
@@ -30,7 +32,7 @@ public class scrappy {
 	static Map<String, Integer> jurdicalHeader;
 	final static String address_col_name = "地址";
 	final static String unit_price_name = "萬/1坪";
-	
+
 //	台南一般.xls
 	public final static String fileName = "法拍地查詢資料.xls";
 	public final static String defaultPath = FileSystemView.getFileSystemView().getHomeDirectory().getPath();
@@ -51,6 +53,8 @@ public class scrappy {
 				.getCellValue().toString().replace(".0", "");
 		return id + (StringUtils.isBlank(price) ? "" : ("_" + price));
 	}
+	
+	
 
 	public static void main(String[] args) throws InterruptedException {
 		jurdicalHeader = new HashMap<>();
@@ -68,15 +72,15 @@ public class scrappy {
 			String address = jurdicalResult.assignSheet(0).assignRow(rowCount)
 					.assignCell(jurdicalHeader.get(address_col_name)).getCellValue().toString();
 			Double unit_Price = null;
-			
+
 			// 持分為全部才搜尋
 			try {
-				 unit_Price = Double.parseDouble(jurdicalResult.assignSheet(0).assignRow(rowCount)
-							.assignCell(jurdicalHeader.get(unit_price_name)).getCellValue().toString());
-			}catch(Exception e) {
+				unit_Price = Double.parseDouble(jurdicalResult.assignSheet(0).assignRow(rowCount)
+						.assignCell(jurdicalHeader.get(unit_price_name)).getCellValue().toString());
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
-			if (StringUtils.isNotBlank(address) && unit_Price!= null && unit_Price<=0.9) {
+			if (StringUtils.isNotBlank(address) && unit_Price != null && unit_Price <= 0.9) {
 				Row row = excelValue.new Row();
 				// for every cell (將法拍資料放入item中)
 				for (Entry<String, Integer> map : jurdicalHeader.entrySet()) {
@@ -86,16 +90,16 @@ public class scrappy {
 								.toString();
 						String location_spec = jurdicalResult.assignSheet(0).assignRow(rowCount)
 								.assignCell(map.getValue()).getCellValue().toString();
-						item.cell = AddressBuilder(county, location_spec);
+						item.setValue(AddressBuilder(county, location_spec));
 						location = locationToArr(county, location_spec);
 
 					} else if (map.getKey().contains("字號")) {
-						item.cell = createLandId(jurdicalResult, rowCount, map.getValue());
+						item.setValue(createLandId(jurdicalResult, rowCount, map.getValue()));
 					} else {
-						item.cell = jurdicalResult.assignSheet(0).assignRow(rowCount).assignCell(map.getValue())
-								.getCellValue().toString().replace(newLine, "");
+						item.setValue(jurdicalResult.assignSheet(0).assignRow(rowCount).assignCell(map.getValue())
+								.getCellValue().toString().replace(newLine, ""));
 					}
-					item.column = map.getKey();
+					item.setColumn(map.getKey());
 					row.addItem(item);
 				}
 
@@ -104,8 +108,8 @@ public class scrappy {
 					search(location, row, pics, excelValue.excelHeaders);
 				} catch (Exception e) {
 					Item err = row.new Item();
-					err.column = "查詢備註";
-					err.cell = e.toString();
+					err.setColumn("查詢備註");
+					err.setValue(e.toString());
 					row.addItem(err);
 
 				}
@@ -116,7 +120,7 @@ public class scrappy {
 				} else {
 					fileToSave = excelValue.itemsToExcel("查詢結果");
 				}
-				
+
 //				AddJurdicalLink(fileToSave, fileName);
 
 				try {
@@ -133,23 +137,7 @@ public class scrappy {
 		}
 	}
 
-	public static String[] locationToArr(String county, String location_spec) {
-		String[] location = new String[4];
-		county = preprocessAddress(county);
-		location_spec = preprocessAddress(location_spec);
-		String temp[] = county.split(newLine);
-		if (temp.length >= 2) {
-			location[0] = temp[0];
-			location[1] = temp[1];
-			location_spec = location_spec.replace(location[0], "");
-			location_spec = location_spec.replace(location[1], "");
-		}
-
-		location[2] = location_spec.substring(0, (location_spec.lastIndexOf("段")) + 1);
-		location[3] = location_spec.substring((location_spec.lastIndexOf("段")) + 1, location_spec.length());
-
-		return location;
-	}
+	
 
 	public static Robot returnRobot() {
 		Robot robot = null;

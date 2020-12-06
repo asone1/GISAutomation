@@ -1,8 +1,8 @@
 package autoTest;
 
-import static autoTest.Jurdical.searchById;
-import static autoTest.Jurdical.startJurdical;
-import static autoTest.PDFHandler.readPdfContent;
+import static CommonAPI.PDFHandler.readPdfContent;
+import static OnlineLandSearch.Jurdical.searchById;
+import static OnlineLandSearch.Jurdical.startJurdical;
 import static autoTest.scrappy.defaultPath;
 
 import java.io.File;
@@ -26,7 +26,7 @@ public class AddJurdicalLinkToExcel {
 
 	static String label = "原住民";
 
-	public static void AddJurdicalLink(Excel excel, String fileName) throws InterruptedException {
+	public static void AddJurdicalLink(Excel excel, String fileName) throws InterruptedException, IOException {
 		// TODO Auto-generated method stub
 //		Excel excel = Excel.loadExcel(defaultPath + "/" + fileName);
 		excel.assignSheet(0);
@@ -35,33 +35,19 @@ public class AddJurdicalLinkToExcel {
 			driver.get("https://aomp.judicial.gov.tw/abbs/wkw/WHD2A00.jsp");
 			String landId = excel.assignRow(rowCount).getCell(0).getStringCellValue().split("_")[1];
 //			boolean isLand = excel.assignRow(rowCount).getCell(1).getStringCellValue().contains("特別")? true:false;
-			boolean landType = excel.assignRow(rowCount).getCell(1).getStringCellValue().contains("特別")? true:false;
-			String url = searchById(driver, landId, excel.assignRow(rowCount).getCell(3).getAbsoluteStringCellValue(),landType);
+			boolean landType = excel.assignRow(rowCount).getCell(1).getStringCellValue().contains("特別") ? true : false;
+			String url = searchById(driver, landId, excel.assignRow(rowCount).getCell(3).getAbsoluteStringCellValue(),
+					landType);
 			if (StringUtils.isNotBlank(url)) {
 				Cell firstCell = excel.assignRow(rowCount).assignCell(0).getCurCell();
 				Hyperlink link = excel.getWorkbook().getCreationHelper().createHyperlink(HyperlinkType.URL);
 				link.setAddress(url);
 				if (firstCell != null) {
 					firstCell.setHyperlink(link);
-					try {
-						String pdfContent = readPdfContent(url);
-						if (pdfContent.contains(label)) {
-							
-							CellStyle style = excel.getWorkbook().createCellStyle();
-							System.out.println(firstCell.getCellStyle().getFillForegroundColor());
-							style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-							style.setFillForegroundColor(IndexedColors.PALE_BLUE.getIndex());
-//							style.setFillForegroundColor(HSSFColor.HSSFColorPredefined.BRIGHT_GREEN.getIndex());
-//							System.out.println(HSSFColor.HSSFColorPredefined.BRIGHT_GREEN.getIndex());
-							firstCell.setCellStyle(style);
-							
-							System.out.println(firstCell.getRichStringCellValue());
-							System.out.println(firstCell.getCellStyle().getFillForegroundColor());
-						}
-					} catch (MalformedURLException e) {
-						e.printStackTrace();
-					} catch (IOException e) {
-						e.printStackTrace();
+
+					String pdfContent= readPdfContent(url);
+					if (pdfContent.contains(label)) {
+
 					}
 
 				}

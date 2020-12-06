@@ -1,16 +1,19 @@
-package autoTest;
+package OnlineLandSearch;
 
-import static autoTest.commonMethod.ConvertTai;
-import static autoTest.commonMethod.relativeSymbol;
+import static CommonAPI.ChineseAddressHandler.ConvertTai;
+import static CommonAPI.ChineseAddressHandler.newLine;
+import static CommonAPI.ChineseAddressHandler.preprocessAddress;
+import static CommonAPI.ChineseAddressHandler.relativeSymbol;
+import static CommonAPI.seleniumCommon.clickPopUP;
+import static CommonAPI.seleniumCommon.exeJs;
+import static CommonAPI.seleniumCommon.jsClick;
+import static CommonAPI.seleniumCommon.mustDo;
+import static CommonAPI.seleniumCommon.startDriver;
+import static CommonAPI.seleniumCommon.takeSnapShot;
+import static CommonAPI.seleniumCommon.waitAndClick;
 import static autoTest.scrappy.defaultPath;
 import static autoTest.scrappy.zoomIn;
 import static autoTest.scrappy.zoomOut;
-import static autoTest.seleniumCommon.clickPopUP;
-import static autoTest.seleniumCommon.exeJs;
-import static autoTest.seleniumCommon.jsClick;
-import static autoTest.seleniumCommon.mustDo;
-import static autoTest.seleniumCommon.takeSnapShot;
-import static autoTest.seleniumCommon.waitAndClick;
 
 import java.util.List;
 import java.util.Map;
@@ -27,8 +30,9 @@ import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.Select;
 
-import autoTest.ExcelValue.Row;
-import autoTest.ExcelValue.Row.Item;
+import dataStructure.ExcelValue;
+import dataStructure.ExcelValue.Row;
+import dataStructure.ExcelValue.Row.Item;
 
 public class GovEmap {
 
@@ -61,14 +65,14 @@ public class GovEmap {
 				for (String single : combination) {
 					if (cached_0) {
 						cached_0 = false;
-						cacheditem_0.cell = single;
+						cacheditem_0.setValue(single);
 					}
 					if (excelHeaders.containsKey(single)) {
 						cached_0 = true;
-						cacheditem_0.column = single;
+						cacheditem_0.setColumn(single);
 					}
 				}
-				if (StringUtils.isNotBlank(cacheditem_0.cell)) {
+				if (StringUtils.isNotBlank(cacheditem_0.getItemValue())) {
 					row.addItem(cacheditem_0);
 					cacheditem_0 = row.new Item();
 				}
@@ -86,11 +90,11 @@ public class GovEmap {
 			List<WebElement> tds = tr.findElements(By.tagName("td"));
 			if (tds.size() >= 2 && excelHeaders.containsKey(tds.get(0).getText())) {
 				Item item = row.new Item();
-				item.column = tds.get(0).getText();
-				item.cell = tds.get(1).getText();
+				item.setColumn(tds.get(0).getText());
+				item.setValue(tds.get(1).getText());
 				row.addItem(item);
-				System.out.println("in__" + row.getItems());
-				if (item.column.equals("公告土地現值")) {
+//				System.out.println("in__" + row.getItems());
+				if (item.getColumn().equals("公告土地現值")) {
 					break;
 				}
 			}
@@ -98,81 +102,80 @@ public class GovEmap {
 
 	}
 
-	@SuppressWarnings("finally")
-	public static Row findbyTable(WebDriver driver, WebElement tableEle, Map<String, Integer> excelHeaders, Row row,
-			boolean is2cols) {
-		boolean itemAdded = false;
-
-		try {
-			List<WebElement> tds = tableEle.findElements(By.xpath(tableXpath[0]));
-//			List<WebElement> td2s = tableEle.findElements(By.xpath(tableXpath[1]));
-			int toBreak = -1;
-
-			boolean cached = false;
-			Item cacheditem = row.new Item();
-
-			for (int index = 0; index < tds.size(); ++index) {
-				if (index == toBreak)
-					break;
-				if (tds.get(index).getText() != null && !tds.get(index).getText().isEmpty()) {
-
-					boolean cached_0 = false;
-					String[] txt = tds.get(index).getText().split("\\n");
-					for (String tdtext : txt) {
-						if (tdtext.contains(":")) {
-							Item cacheditem_0 = row.new Item();
-							String combination[] = tdtext.split(":");
-							for (String single : combination) {
-								if (cached_0) {
-									cached_0 = false;
-									cacheditem_0.cell = single;
-								}
-								if (excelHeaders.containsKey(single)) {
-									cached_0 = true;
-									cacheditem_0.column = single;
-								}
-								if (single.contains("國土利用現況調查")) {
-									toBreak = index + 1;
-								}
-							}
-							if (StringUtils.isNotBlank(cacheditem_0.cell)) {
-								row.addItem(cacheditem_0);
-								itemAdded = true;
-								cacheditem_0 = row.new Item();
-							}
-						} else {
-							if (cached && !excelHeaders.containsKey(tdtext)) {
-								cacheditem.cell = tdtext;
-								cached = false;
-							}
-							if (excelHeaders.containsKey(tdtext)) {
-								cached = true;
-								cacheditem.column = tdtext;
-								if (tdtext.equals("公告土地現值")) {
-									toBreak = index + 2;
-								}
-							}
-						}
-
-					}
-					if (StringUtils.isNotBlank(cacheditem.cell)) {
-						row.addItem(cacheditem);
-						itemAdded = true;
-						cacheditem = row.new Item();
-					}
-
-				}
-			}
-		} catch (StaleElementReferenceException e) {
-			System.out.println(e);
-		} finally {
-			return row;
-		}
-	}
+//	@SuppressWarnings("finally")
+//	public static Row findbyTable(WebDriver driver, WebElement tableEle, Map<String, Integer> excelHeaders, Row row,
+//			boolean is2cols) {
+//		boolean itemAdded = false;
+//
+//		try {
+//			List<WebElement> tds = tableEle.findElements(By.xpath(tableXpath[0]));
+////			List<WebElement> td2s = tableEle.findElements(By.xpath(tableXpath[1]));
+//			int toBreak = -1;
+//
+//			boolean cached = false;
+//			Item cacheditem = row.new Item();
+//
+//			for (int index = 0; index < tds.size(); ++index) {
+//				if (index == toBreak)
+//					break;
+//				if (tds.get(index).getText() != null && !tds.get(index).getText().isEmpty()) {
+//
+//					boolean cached_0 = false;
+//					String[] txt = tds.get(index).getText().split("\\n");
+//					for (String tdtext : txt) {
+//						if (tdtext.contains(":")) {
+//							Item cacheditem_0 = row.new Item();
+//							String combination[] = tdtext.split(":");
+//							for (String single : combination) {
+//								if (cached_0) {
+//									cached_0 = false;
+//									cacheditem_0.cell = single;
+//								}
+//								if (excelHeaders.containsKey(single)) {
+//									cached_0 = true;
+//									cacheditem_0.column = single;
+//								}
+//								if (single.contains("國土利用現況調查")) {
+//									toBreak = index + 1;
+//								}
+//							}
+//							if (StringUtils.isNotBlank(cacheditem_0.cell)) {
+//								row.addItem(cacheditem_0);
+//								itemAdded = true;
+//								cacheditem_0 = row.new Item();
+//							}
+//						} else {
+//							if (cached && !excelHeaders.containsKey(tdtext)) {
+//								cacheditem.cell = tdtext;
+//								cached = false;
+//							}
+//							if (excelHeaders.containsKey(tdtext)) {
+//								cached = true;
+//								cacheditem.column = tdtext;
+//								if (tdtext.equals("公告土地現值")) {
+//									toBreak = index + 2;
+//								}
+//							}
+//						}
+//
+//					}
+//					if (StringUtils.isNotBlank(cacheditem.cell)) {
+//						row.addItem(cacheditem);
+//						itemAdded = true;
+//						cacheditem = row.new Item();
+//					}
+//
+//				}
+//			}
+//		} catch (StaleElementReferenceException e) {
+//			System.out.println(e);
+//		} finally {
+//			return row;
+//		}
+//	}
 
 	public static WebDriver startMap() throws InterruptedException {
-		System.setProperty("webdriver.chrome.driver", defaultPath + "/chromedriver.exe");
-		WebDriver driver = new ChromeDriver();
+		WebDriver driver = startDriver();
 		driver.get("https://maps.nlsc.gov.tw/T09/mapshow.action?In_type=web");
 		driver.manage().window().maximize();
 
@@ -200,32 +203,43 @@ public class GovEmap {
 	}
 
 	// 地號查詢
-	public static void useFormalAddress(WebDriver driver, String[] location) throws InterruptedException {
+	public static void useFormalAddress(WebDriver driver, String[] location) throws Exception {
 		// click定位查詢
 		exeJs(driver, "folder('adg','CollapsiblePanel1');toggleControl('none');chk_allpos(false);");
 		Thread.sleep(5000);
 		// 開始再定位查詢輸入資料
 		WebElement submenu = driver.findElement(By.id("submenu_pos"));
 		int countEleId = 0;
-		boolean click = false;
+
 		for (String eleId : setLocationElementId) {
-			for (WebElement option : (new Select(submenu.findElement(By.id(eleId)))).getOptions()) {
-				if (location[countEleId] != null && (option.getText().trim().equals(ConvertTai(location[countEleId])))
-						|| option.getText().trim().equals(ConvertTai(location[countEleId].substring(0, location[countEleId].indexOf("段")+1)))) {
+			boolean click = false;
+			List<WebElement> options = (new Select(submenu.findElement(By.id(eleId)))).getOptions();
+			for (WebElement option : options) {
+				if (location[countEleId] != null
+						&& (option.getText().trim().equals(ConvertTai(location[countEleId])))) {
 					option.click();
 					click = true;
 					Thread.sleep(500);
 					++countEleId;
-					 break;
+					break;
 				}
 			}
-		}
-		// 跑完台東新增，尚未測試
-		if (click == false) {
-			for (String eleId : setLocationElementId) {
-				for (WebElement option : (new Select(submenu.findElement(By.id(eleId)))).getOptions()) {
-					if (location[countEleId] != null
-							&& option.getText().trim().contains(ConvertTai(location[countEleId].substring(0, location[countEleId].indexOf("段")+1)))) {
+			if (click == false) {
+				for (WebElement option : options) {
+					if (location[countEleId] != null && option.getText().trim().equals(
+							ConvertTai(location[countEleId].substring(0, location[countEleId].indexOf("段") + 1)))) {
+						option.click();
+						click = true;
+						Thread.sleep(500);
+						++countEleId;
+						break;
+					}
+				}
+			}
+			if (click == false) {
+				for (WebElement option : options) {
+					if (location[countEleId] != null && option.getText().trim().contains(
+							ConvertTai(location[countEleId].substring(0, location[countEleId].indexOf("段") + 1)))) {
 						option.click();
 						Thread.sleep(500);
 						++countEleId;
@@ -233,8 +247,12 @@ public class GovEmap {
 					}
 				}
 			}
+			if (click == false) {
+				for (String s : location)
+					System.out.println(s);
+				throw new Exception("找不到地號");
+			}
 		}
-
 // "landcode"
 		if (location[3] != null) {
 			driver.findElement(By.id("landcode")).sendKeys(location[3].replace("號", ""));
@@ -408,13 +426,13 @@ public class GovEmap {
 	}
 
 	public static void search(String[] location, Row row, List<String> pics, Map<String, Integer> excelHeaders)
-			throws InterruptedException {
+			throws Exception {
 		String idName = String.valueOf(Math.random());
-		idName = row.getItem("字號").cell;
+		idName = row.getItem("字號").getValue();
 
 		WebDriver driver = startMap();
 		addLayer(driver);
-		String address = row.getItem("地址").cell;
+		String address = row.getItem("地址").getValue();
 		boolean isformal = isFormal(address);
 		if (isformal) {
 			useFormalAddress(driver, location);
@@ -428,5 +446,45 @@ public class GovEmap {
 		closeInfo(driver, isformal);
 		take4snapshot(idName, location, driver, pics, row);
 		driver.quit();
+	}
+
+	public static String[] locationToArr(String county, String location_spec) {
+		String[] location = new String[4];
+		county = preprocessAddress(county).replace(" ", "");
+		location_spec = preprocessAddress(location_spec).replace(" ", "");
+		String temp[] = county.split(newLine);
+		if (temp.length >= 2) {
+			location[0] = temp[0];
+			location[1] = temp[1];
+			location_spec = location_spec.replace(location[0], "");
+			location_spec = location_spec.replace(location[1], "").trim();
+		}
+
+		location[2] = location_spec.substring(0, (location_spec.lastIndexOf("段")) + 1).trim();
+		location[3] = location_spec.substring((location_spec.lastIndexOf("段")) + 1, location_spec.length()).trim();
+
+		return location;
+	}
+
+	public static WebDriver search(String[] location, Row row, Map<String, Integer> excelHeaders) throws Exception {
+//		String idName = String.valueOf(Math.random());
+//		idName = row.getItem("字號").getValue();
+
+		WebDriver driver = startMap();
+		addLayer(driver);
+		String address = row.getItem("地址").getValue();
+		boolean isformal = isFormal(address);
+		if (isformal) {
+			useFormalAddress(driver, location);
+		} else {
+			useLegalAddress(driver, address);
+		}
+		Thread.sleep(5000);
+		openInfo(driver);
+		findTwoTables(row, excelHeaders, driver);
+		Thread.sleep(500);
+		closeInfo(driver, isformal);
+//		take4snapshot(idName, location, driver, pics, row);
+		return driver;
 	}
 }

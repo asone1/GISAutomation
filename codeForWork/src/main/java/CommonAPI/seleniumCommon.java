@@ -1,6 +1,9 @@
-package autoTest;
+package CommonAPI;
+
+import static autoTest.scrappy.defaultPath;
 
 import java.io.File;
+import java.util.function.Function;
 
 import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.By;
@@ -12,11 +15,20 @@ import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import io.github.bonigarcia.wdm.WebDriverManager;
+
 public class seleniumCommon {
+	public static WebDriver startDriver() {
+		System.setProperty("webdriver.chrome.driver", defaultPath + "/chromedriver.exe");
+		WebDriverManager.chromedriver().setup();
+		return new ChromeDriver();
+	}
+	
 	public static void takeSnapShot(WebDriver webdriver, String fileWithPath) throws Exception {
 
 		// Convert web driver object to TakeScreenshot
@@ -53,10 +65,10 @@ public class seleniumCommon {
 		js.executeScript(jsCode);
 	}
 
-	@SuppressWarnings("deprecation")
+	
 	public static void waitAndClick(WebDriver driver, By by) {
 		try {
-			new WebDriverWait(driver, 30).until(ExpectedConditions.elementToBeClickable(by)).click();
+			new WebDriverWait(driver, 30).until((Function< WebDriver, WebElement>) ExpectedConditions.elementToBeClickable(by)).click();
 		}catch(ElementClickInterceptedException e) {
 			clickPopUP(driver);
 		}
