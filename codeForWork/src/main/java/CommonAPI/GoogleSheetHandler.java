@@ -37,40 +37,10 @@ public class GoogleSheetHandler {
 	 * 設定預設最大的欄位為AZ
 	 */
 	private static String sheetName = "工作表1";
-
-	
 	
 	public static void main(String... arg) throws IOException, GeneralSecurityException {
-//		String sheetFileId = "1II9_Lsw69DvVARsEWNMgVm8uQV9-5U4uMGaDe-7f9Ic";
-//		Sheets service = getSheetService();
-//		BatchUpdateSpreadsheetRequest req = new BatchUpdateSpreadsheetRequest().setIncludeSpreadsheetInResponse(true)
-//				.setRequests(Collections.singletonList(
-//						new Request().setUpdateSpreadsheetProperties(new UpdateSpreadsheetPropertiesRequest()
-//								.setProperties(new SpreadsheetProperties().setTitle("test")).setFields("title"))));
-
-//		final Map<String, Object> headers = new HashMap<>();
-//		headers.put("CamelGoogleSheets.spreadsheetId", spreadsheetId);
-//		headers.put("CamelGoogleSheets.batchUpdateSpreadsheetRequest", request);
-//		producerTemplate.requestBodyAndHeaders("google-sheets://spreadsheets/batchUpdate", null, headers);
-//		return Response.ok().build();
-//		service.spreadsheets().batchUpdate(sheetFileId, content);
 	}
 
-	// 查找第colIndex欄的資料，有沒有wordToSearch
-	// 回傳 第幾列及該row
-//	public static Object[] findByColNum(String sheetFileId, int colIndex, String wordToSearch)
-//			throws IOException, GeneralSecurityException {
-//		int row_idx = 1;
-//		for (List<Object> row : findValue(getSheetService(), sheetFileId,colIndex)) {
-//			if (row.size() > colIndex) {
-//				if (row.get(colIndex).toString().contains(wordToSearch)) {
-//					return new Object[] { row_idx, row };
-//				}
-//			}
-//			++row_idx;
-//		}
-//		return null;
-//	}
 
 	static String readRange = sheetName + "!A1:AZ";
 

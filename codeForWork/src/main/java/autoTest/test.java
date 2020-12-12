@@ -1,48 +1,63 @@
 package autoTest;
 
-import static autoTest.scrappy.*;
-import static CommonAPI.seleniumCommon.*;
-import static OnlineLandSearch.GovEmap.*;
-import static OnlineLandSearch.Jurdical.*;
-import static autoTest.AddJurdicalLinkToExcel.*;
-import java.awt.AWTException;
-import java.awt.Robot;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-
-import org.apache.commons.lang3.StringUtils;
-import org.apache.poi.common.usermodel.HyperlinkType;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Hyperlink;
-import org.openqa.selenium.By;
-import org.openqa.selenium.Keys;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
-import org.openqa.selenium.chrome.ChromeDriver;
-
-import excel.Excel;
-import excel.Excel.ExcelType;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.Locale;
+import java.util.Properties;
+import java.util.PropertyResourceBundle;
+import java.util.ResourceBundle;
+import java.util.ResourceBundle.Control;
+import java.util.Set;
 
 public class test {
 	static String defaultFilePath = "/花蓮";
-	
 
-	public static void main(String[] args) throws Exception {
-		Excel excel = Excel.loadExcel(defaultPath + "/" + "法拍地查詢資料結果.xls");
-		excel.assignSheet(0);
-		AddJurdicalLink(excel, fileName);
-		
-//		for (int index = 1; index < excel.getCurSheetRowCnt(); ++index) {
-//			String address = excel.assignRow(index).getCell(0).getAbsoluteStringCellValue();
-//			if (StringUtils.isNotBlank(address) && address.equals("108_022682_80")) {
-////				String county = excel.assignRow(index).getCell(4).getAbsoluteStringCellValue();
-//				System.out.println("外面"+ excel.assignRow(index).getCell(0).getCellStyle().getFillForegroundColor());
-//				
-//			}
-//
-//			
-//		}
+	public static void main(String[] args) {
+		test app = new test();
+		app.printAll("config.properties");
+	}
+
+	private void printAll(String filename) {
+
+		try (InputStream input = getClass().getClassLoader().getResourceAsStream(filename)) {
+
+			Properties prop = new Properties();
+
+			if (input == null) {
+				System.out.println("Sorry, unable to find " + filename);
+				return;
+			}
+
+			prop.load(input);
+			// Java 8 , print key and values
+			prop.forEach((key, value) -> {
+				try {
+					System.out.println("Key : " + new String(key.toString().getBytes("ISO-8859-1"), "UTF-8") + ", Value : " + value);
+				} catch (UnsupportedEncodingException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			});
+
+			// Get all keys
+//			prop.keySet().forEach(x -> System.out.println(x));
+
+			Set<Object> objects = prop.keySet();
+
+			/*
+			 * Enumeration e = prop.propertyNames(); while (e.hasMoreElements()) { String
+			 * key = (String) e.nextElement(); String value = prop.getProperty(key);
+			 * System.out.println("Key : " + key + ", Value : " + value); }
+			 */
+
+		} catch (IOException ex) {
+			ex.printStackTrace();
+		}
 
 	}
+
 }
