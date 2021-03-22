@@ -39,6 +39,19 @@ public class GoogleSheetHandler {
 	private static String sheetName = "工作表1";
 	
 	public static void main(String... arg) throws IOException, GeneralSecurityException {
+		Sheets sheetService =getSheetService();
+		String sheetFileId = "15qD4zwWKqmBqLdShHVkScY3pjZHKFL1D4KaSRi5_xWk";
+		int excelNumOfData = findSheetLastRow(sheetService,sheetFileId);
+		String rowRange = "!A1:Y" + excelNumOfData;
+		System.out.println(excelNumOfData);
+		int col = findOneCol(sheetService,sheetFileId,15,"109_15475_8");
+		System.out.println("!!!"+col);
+		List<List<Object>> google_spreadsheet_id_list = sheetService.spreadsheets().values()
+				.get(sheetFileId, rowRange).execute().getValues();
+		
+		for (Object o:google_spreadsheet_id_list.get(col-1)) {
+			System.out.println(o.toString());
+		}
 	}
 
 

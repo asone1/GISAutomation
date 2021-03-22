@@ -10,17 +10,21 @@ import org.apache.pdfbox.text.PDFTextStripper;
 
 public class PDFHandler {
 	public static String readPdfContent(String url) throws IOException {
+		try {
+			URL pdfUrl = new URL(url);
+			InputStream in = pdfUrl.openStream();
+			BufferedInputStream bf = new BufferedInputStream(in);
+			PDDocument doc = PDDocument.load(bf);
+			int numberOfPages = getPageCount(doc);
+//	System.out.println("The total number of pages " + numberOfPages);
+			String content = new PDFTextStripper().getText(doc);
+			doc.close();
+			return content;
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return "";
 
-		URL pdfUrl = new URL(url);
-		InputStream in = pdfUrl.openStream();
-		BufferedInputStream bf = new BufferedInputStream(in);
-		PDDocument doc = PDDocument.load(bf);
-		int numberOfPages = getPageCount(doc);
-//		System.out.println("The total number of pages " + numberOfPages);
-		String content = new PDFTextStripper().getText(doc);
-		doc.close();
-
-		return content;
 	}
 
 	public static int getPageCount(PDDocument doc) {

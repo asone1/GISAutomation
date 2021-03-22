@@ -30,10 +30,27 @@ import com.google.api.services.drive.DriveScopes;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
 import com.google.api.services.drive.model.Permission;
+import com.google.api.services.sheets.v4.Sheets;
+
 import static OnlineLandSearch.findLandOnline.*;
 public class GoogleDriverHandler {
 
-	
+	public static void main(String... arg) {
+		try {
+			Drive sheetService =getService();
+			String folderId = isFolderNameExist(sheetService, "臺南");
+			if (StringUtils.isBlank(folderId)) {
+				System.out.println("沒找到");
+			}else {
+				System.out.println("有");
+			}
+
+		
+		} catch (GeneralSecurityException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 	/*
 	 * create folders according to its county (if folder doesn't exist), save it as
 	 * anyone-can-view, and return its link

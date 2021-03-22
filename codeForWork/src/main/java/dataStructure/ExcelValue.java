@@ -80,6 +80,7 @@ public class ExcelValue {
 
 		public Item addNewItem(String col, String cell) {
 			Item item = new Item();
+//			System.out.println(col +"_"+ cell);
 			item.setColumn(col);
 			item.setValue(cell);
 			this.addItem(item);
@@ -102,7 +103,7 @@ public class ExcelValue {
 					return i;
 				}
 			}
-			return null;
+			return new Item();
 		}
 
 		public List<Item> getItems() {

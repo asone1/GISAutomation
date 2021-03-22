@@ -9,8 +9,8 @@ import static OnlineLandSearch.GovEmap.locationToArr;
 import static OnlineLandSearch.GovEmap.search;
 import static OnlineLandSearch.Jurdical.FifthCellHandler;
 import static OnlineLandSearch.Jurdical.addJurdicalPdfInfo;
+import static OnlineLandSearch.Jurdical.clickPDFUrl;
 import static OnlineLandSearch.Jurdical.findLastPage;
-import static OnlineLandSearch.Jurdical.findPDFUrl;
 import static OnlineLandSearch.Jurdical.startJurdical;
 import static OnlineLandSearch.Jurdical.toPage;
 import static OnlineLandSearch.Jurdical.trsXpath;
@@ -23,8 +23,10 @@ import java.nio.charset.Charset;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.swing.filechooser.FileSystemView;
 
@@ -33,7 +35,10 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.UnhandledAlertException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.sheets.v4.Sheets;
 
@@ -47,7 +52,8 @@ import dataStructure.PropertiesSetting;
 
 public class findLandOnline {
 //	public static String[] court = { "宜蘭" };
-	public static String[] court = {  "嘉義" };
+//	public static String[] court = { "嘉義" };
+	public static String[] court = { "臺東" };
 
 //	public static GoogleSheetHandler sheetService;
 	public static Drive driveService;
@@ -56,7 +62,6 @@ public class findLandOnline {
 	private static OneToOneMap<String, Integer> htmlHeader;
 	private static ExcelValue excelValue;
 	private static PropertiesSetting prop;
-
 	public final static String defaultPath = FileSystemView.getFileSystemView().getHomeDirectory().getPath();
 	public final static String tempShotPath = defaultPath + "/temp.png";
 
@@ -65,6 +70,7 @@ public class findLandOnline {
 		excelValue = new ExcelValue();
 		setHeader();
 		driveService = GoogleDriverHandler.getService();
+
 	}
 
 	public static void main(String[] args) throws InterruptedException, IOException, GeneralSecurityException {
@@ -80,16 +86,48 @@ public class findLandOnline {
 				Sheets sheetService = GoogleSheetHandler.getSheetService();
 				String sheetFileId = PropertiesSetting
 						.getPropertyByKey((PropertiesSetting.getPropertyByKey(courtName) + ".sheetFileId"));
-				System.out.println((PropertiesSetting.getPropertyByKey(courtName)));
+				String desireCounties_arr = PropertiesSetting
+						.getPropertyByKey((PropertiesSetting.getPropertyByKey(courtName) + ".desiredCounty"));
+
+				List<String> desiredCounties = new ArrayList<>();
+				if (desireCounties_arr != null) {
+					desiredCounties = Arrays.asList(desireCounties_arr.split("#"));
+				}
 				courtName = ConvertTai(courtName);
+				// 將所有幕前excel資料拉進來
+
+				List<List<Object>> google_spreadsheet_id_list = null;
+				Set<String> land_id_set = new HashSet<String>();
+
+				String rowRange = "!A1:Y200";
+				google_spreadsheet_id_list = sheetService.spreadsheets().values().get(sheetFileId, rowRange).execute()
+						.getValues();
+				int rowInx = 0;
+				// 將以有資料存到map
+				if (google_spreadsheet_id_list != null) {
+					while (rowInx < google_spreadsheet_id_list.size()) {
+						Object list_obj = google_spreadsheet_id_list.get(rowInx);
+
+						if (list_obj instanceof List
+								&& ((List) list_obj).size() > excelValue.getExcelHeaders().get(LAND_ID)) {
+							Object land_id = ((List) list_obj).get(excelValue.getExcelHeaders().get(LAND_ID));
+
+							if (land_id.toString().split("_").length > 1) {
+								land_id_set.add(land_id.toString().split("_")[1]);
+							}
+						}
+						++rowInx;
+					}
+				}
+
 				// 初次進入網站才建立header:對應欄位index資料
 				String countyName = "";
 				int rowCount = GoogleSheetHandler.findSheetLastRow(sheetService, sheetFileId);
 				boolean firstTime = false;
 				outer: for (int landtype = 0; landtype < 2; ++landtype) {
 					WebDriver driver = startJurdical();
-					visitJurdical(excelValue, driver, courtName, landtype);
-					System.out.println(excelValue.getExcelHeaders());
+					visitJurdical(driver, courtName, landtype);
+//					System.out.println(excelValue.getExcelHeaders());
 					int searchmemoIndex = excelValue.getExcelHeaders().get(SEARCH_MEMO);
 
 					if (rowCount == 0) {
@@ -103,143 +141,164 @@ public class findLandOnline {
 					if (initialConfig == false) {
 						setHtmlHeader(driver);
 						// 清空查詢備註
-						GoogleSheetHandler.clearOneCol(sheetService, sheetFileId, searchmemoIndex + 1);
+//						GoogleSheetHandler.clearOneCol(sheetService, sheetFileId, searchmemoIndex + 1);
 						initialConfig = true;
+
 					}
 					try {
-						// 抓[最後一頁]的資料
 						int lastPage = findLastPage(driver);
+						WebDriverWait wait = new WebDriverWait(driver, 10);
+						wait.until(ExpectedConditions.frameToBeAvailableAndSwitchToIt("v2"));
+
 						for (int pageNum = 2; pageNum <= lastPage; ++pageNum) {
-							
-								LoopTr: for (WebElement tr : driver.findElements(By.xpath(trsXpath))) {
+							System.out.println("STOP0" + pageNum);
+
+							LoopTr: for (WebElement tr : driver.findElements(By.xpath(trsXpath))) {
+								try {
+									wait.until(ExpectedConditions.visibilityOfElementLocated(By.tagName("td")));
+									List<WebElement> tds = tr.findElements(By.tagName("td"));
+									Row row = excelValue.new Row();
+									/*
+									 * 法網站拍表格資訊
+									 */
+									for (Map.Entry<String, Integer> en : htmlHeader.entrySet()) {
+
+										String htmlTdtext = tds.get(en.getValue()).getText();
+
+										if (!htmlTdtext.contains("度分秒")) {
+											row.addNewItem(en.getKey(), tds.get(en.getValue()).getText());
+										}
+									}
+
+									// 檢查一 是否在想要的區域
+									String district = row.getItem(COUNTY).getItemValue();
+									if (desiredCounties.size() > 0 && district.split(newLine).length > 0) {
+										district = district.split(newLine)[1];
+										if (StringUtils.isNotBlank(district) && !desiredCounties.contains(district)) {
+//											
+											continue LoopTr;
+										}
+									}
+									if (tds.size() >= 6) {
+										String getElementString = new String(
+												tds.get(5).getText().getBytes(Charset.forName("UTF-8")), "UTF-8");
+
+										FifthCellHandler(row, getElementString, excelValue);
+									}
+									// id = 年分_字號_價格
+									Item item_id = row.addNewItem(LAND_ID, createLandId(
+											row.getItem(columns[0]).getItemValue(), row.getItem(PRICE).getItemValue()));
+
+									// 確認雲端上的資料有無此案號
+									// 因為header index starts from 0, so add 1 to find the char representative in
+									// Google sheet
+									if (!firstTime) {
+										System.out.println("不是初次抓資料");
+
+//											int rowIndex = GoogleSheetHandler.findOneCol(sheetService, sheetFileId,
+//													excelValue.getExcelHeaders().get(LAND_ID) + 1,
+//													item_id.getItemValue());
+//											int rowIndex = -1;
+										String land_id = item_id.getItemValue();
+										if (land_id.split("_").length > 1) {
+											String id = land_id.split("_")[1];
+											if (land_id_set.contains(id)) {
+												continue LoopTr;
+											}
+										}
+
+//											
+									}
+
+									Double unit_Price = 0.;
 									try {
-										List<WebElement> tds = tr.findElements(By.tagName("td"));
-										Row row = excelValue.new Row();
-										if (tds.size() >= 6) {
-											String getElementString = new String(
-													tds.get(5).getText().getBytes(Charset.forName("UTF-8")), "UTF-8");
-											row = FifthCellHandler(getElementString, excelValue);
-										}
-
-										// 檢查一 不持分
-										if (row != null) {
-											/*
-											 * 法網站拍表格資訊
-											 */
-											for (Map.Entry<String, Integer> en : htmlHeader.entrySet()) {
-												String htmlTdtext = tds.get(en.getValue()).getText();
-												if (!htmlTdtext.contains("度分秒")) {
-													row.addNewItem(en.getKey(), tds.get(en.getValue()).getText());
-												}
-											}
-											// id = 年分_字號_價格
-											Item item_id = row.addNewItem(LAND_ID,
-													createLandId(row.getItem(columns[0]).getItemValue(),
-															row.getItem(PRICE).getItemValue()));
-											/*
-											 * 除了法網站拍表格資訊，另外加入pdf資料、土地ID、圖片資訊
-											 */
-											String pdfUrl = findPDFUrl(tr);
-											row.addNewItem(PDF_URL, pdfUrl);
-											// 確認雲端上的資料有無此案號
-											// 因為header index starts from 0, so add 1 to find the char representative in
-											// Google sheet
-											if (!firstTime) {
-												System.out.println("初次抓資料");
-												int rowIndex = GoogleSheetHandler.findOneCol(sheetService, sheetFileId,
-														excelValue.getExcelHeaders().get(LAND_ID) + 1,
-														item_id.getItemValue());
-												String rowRange = "!A" + rowIndex + ":Y" + rowIndex;
-												List<List<Object>> list = sheetService.spreadsheets().values()
-														.get(sheetFileId, rowRange).execute().getValues();
-												if (list != null) {
-													int priceIndex = excelValue.getExcelHeaders().get(PRICE);
-													if (StringUtils
-															.isBlank(list.get(0).get(searchmemoIndex).toString())) {
-														List<List<Object>> toWrite = new ArrayList<>();
-														List<Object> track = new ArrayList<>();
-														track.add("仍存在");
-														toWrite.add(track);
-														GoogleSheetHandler.updateOneValue(sheetService, sheetFileId,
-																searchmemoIndex + 1, rowIndex, toWrite);
-													}
-													if (!list.get(0).get(priceIndex)
-															.equals(row.getItem(PRICE).getItemValue())) {
-														GoogleSheetHandler.addOneRowOnSheet(sheetService, sheetFileId,
-																rowIndex, excelValue.rowToStringArr(row));
-													}
-													// 如果已經有案號資料，且金額一樣則繼續檢查下一筆tr
-													continue LoopTr;
-												}
-											}
-
-											Double unit_Price = 0.;
-											try {
-												unit_Price = Double.parseDouble(row.getItem(UNIT_PRICE).getItemValue());
-											} catch (Exception e) {
-												e.printStackTrace();
-											}
-											// 檢查三 單價不高於9000/坪
-											if (unit_Price <= 0.9) {
-
-												String pdfContent = readPdfContent(pdfUrl);
-
-												// 檢查二 非原住民的地
-												if (!pdfContent.contains(ABORIGINE)) {
-
-													// 將pdf的使用情形加入item
-													addJurdicalPdfInfo(row, pdfContent);
-													/*
-													 * 雲端前置
-													 */
-													countyName = row.getItem(COUNTY).getItemValue().split(newLine)[0];
-													// 開始進入國土繪測
-													String location[] = new String[4];
-													location = locationToArr(row.getItem(COUNTY).getItemValue(),
-															row.getItem(ADDRESS).getItemValue());
-													WebDriver mapDriver = search(location, row,
-															excelValue.getExcelHeaders());
-
-													if (row.getItem(LAND_FOR) != null
-															&& row.getItem(LAND_FOR).getItemValue() != null
-															&& !row.getItem(LAND_FOR).getItemValue().contains("一般道路")) {
-														takeSavePics(mapDriver, row, countyName);
-														mapDriver.quit();
-														// 每搜尋一筆 加入excel一次
-//						excelValue.addaRow(row);
-														GoogleSheetHandler.addOneRowOnSheet(sheetService, sheetFileId,
-																rowCount++, excelValue.rowToStringArr(row));
-//						excelValue.print();
-													} else {
-														mapDriver.quit();
-													}
-
-												}
-
-											}
-										}
-									} catch (UnhandledAlertException e1) {
-										e1.printStackTrace();
+										unit_Price = Double.parseDouble(row.getItem(UNIT_PRICE).getItemValue());
 									} catch (Exception e) {
 										e.printStackTrace();
 									}
-								}
-							
+									// 檢查三 單價不高於9000/坪
+									if (unit_Price <= 0.9) {
+										/*
+										 * 除了法網站拍表格資訊，另外加入pdf資料、土地ID、圖片資訊
+										 */
+										String mainWin = driver.getWindowHandle();
+										clickPDFUrl(tr);
+										Thread.sleep(300);
+										String pdfUrl = "";
+										for (String winHandle : driver.getWindowHandles()) {
 
-//						driver.switchTo().window(driver.getWindowHandle());
+											driver.switchTo().window(winHandle);
+											String now_pdfUrl = driver.getCurrentUrl();
+											if (now_pdfUrl.contains("pdf")) {
+												pdfUrl = driver.getCurrentUrl();
+												driver.close();
+												driver.switchTo().window(mainWin);
+												wait.until(ExpectedConditions.frameToBeAvailableAndSwitchToIt("v2"));
+											}
+										}
+
+										if (StringUtils.isNotEmpty(pdfUrl)) {
+											row.addNewItem(PDF_URL, pdfUrl);
+											String pdfContent = readPdfContent(pdfUrl);
+
+											// 檢查二 非原住民的地
+											if (!pdfContent.contains(ABORIGINE)) {
+
+												// 將pdf的使用情形加入item
+												addJurdicalPdfInfo(row, pdfContent);
+												/*
+												 * 雲端前置
+												 */
+												countyName = row.getItem(COUNTY).getItemValue().split(newLine)[0];
+												// 開始進入國土繪測
+												String location[] = new String[4];
+												location = locationToArr(row.getItem(COUNTY).getItemValue(),
+														row.getItem(ADDRESS).getItemValue());
+												WebDriver mapDriver = search(location, row,
+														excelValue.getExcelHeaders());
+
+												if (row.getItem(LAND_FOR) != null
+														&& row.getItem(LAND_FOR).getItemValue() != null
+														&& !row.getItem(LAND_FOR).getItemValue().contains("一般道路")) {
+													takeSavePics(mapDriver, row, countyName);
+													mapDriver.quit();
+													// 每搜尋一筆 加入excel一次
+//							excelValue.addaRow(row);
+													GoogleSheetHandler.addOneRowOnSheet(sheetService, sheetFileId,
+															rowCount++, excelValue.rowToStringArr(row));
+//							excelValue.print();
+												} else {
+													mapDriver.quit();
+												}
+
+											}
+										}
+
+									}
+
+								} catch (UnhandledAlertException e1) {
+									e1.printStackTrace();
+								} catch (Exception e) {
+									e.printStackTrace();
+								}
+							}
+
 							toPage(driver, pageNum);
 						}
-
+						driver.switchTo().defaultContent();
 					} catch (Exception e) {
 						e.printStackTrace();
 						driver.quit();
 					}
+
 					driver.quit();
 					continue outer;
 				}
 
 			}
-		} catch (InterruptedException | IOException | GeneralSecurityException e) {
+		} catch (InterruptedException | IOException |
+
+				GeneralSecurityException e) {
 			e.printStackTrace();
 		}
 	}
@@ -281,19 +340,28 @@ public class findLandOnline {
 	}
 
 	public static void setHtmlHeader(WebDriver driver) {
+		WebDriverWait wait = new WebDriverWait(driver, 10);
+		wait.until(ExpectedConditions.frameToBeAvailableAndSwitchToIt("v2"));
+		WebElement table = wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("tablecontext")));
+
+		WebElement first_tr = table.findElement(By.tagName("thead")).findElement(By.tagName("tr"));
+
 		htmlHeader = new OneToOneMap<String, Integer>();
 		int cellIndex = 0;
-		for (WebElement td : driver
-				.findElements(By.xpath("/html/body/form[1]/table[1]/tbody/tr[4]/td[2]/table/tbody/tr[1]/td"))) {
+		List<WebElement> tds = first_tr.findElements(By.tagName("td"));
+
+		for (WebElement td : tds) {
 			for (String column : columns) {
 				String headerName = td.getText().split(newLine)[0];
-				if (headerName.contains(column) && !headerName.equals("土地坐落/面積")) {
+				if (headerName.contains(column) && !headerName.equals("土地坐落")) {
+//					System.out.println(headerName);
 					htmlHeader.put(headerName, cellIndex);
 					break;
 				}
 			}
 			++cellIndex;
 		}
+		driver.switchTo().defaultContent();
 	}
 
 	public static void setHeader() {
@@ -306,7 +374,19 @@ public class findLandOnline {
 	}
 
 	public static String createLandId(String nameInLaw, String price) {
-		String id = String.join("_", Arrays.asList(nameInLaw.split("\\D+")));
+		// 把0754871號 移除最前面的0
+		List<String> numbers = Arrays.asList(nameInLaw.split("\\D+"));
+		List<String> new_numbers = new ArrayList<>();
+		for (String number : numbers) {
+			try {
+				int number_dig = Integer.parseInt(number);
+				new_numbers.add(String.valueOf(number_dig));
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+
+		}
+		String id = String.join("_", new_numbers);
 		return id + (StringUtils.isBlank(price) ? "" : ("_" + price.replace(".0", "")));
 	}
 
@@ -326,7 +406,7 @@ public class findLandOnline {
 	public static final String MIN_SIZE = "(小)";
 	public static final String MAX_SIZE = "(大)";
 	public static final String SEARCH_MEMO = "查詢備註";
-	public static final String[] columns = { "字號", "拍賣日期", "點交", "備 註", "行政區", "經緯度", LAND_FOR, "面積", "使用分區", "使用地類別",
+	public static final String[] columns = { "案號", "拍賣日期", "點交", "備註", "行政區", "經緯度", LAND_FOR, "面積", "使用分區", "使用地類別",
 			"登記日期", "公告土地現值", SEARCH_MEMO, COUNTY, LAND_ID, PDF_URL, SQUARE, PRICE, UNIT_PRICE, ADDRESS, JURDI_INFO,
 			PIC + MAX_SIZE, PIC + MIN_SIZE, PIC + MIN_SIZE + "(1)", PIC + MAX_SIZE + "(1)" };
 

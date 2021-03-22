@@ -9,6 +9,7 @@ import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.ElementClickInterceptedException;
 import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.TakesScreenshot;
@@ -67,8 +68,12 @@ public class seleniumCommon {
 
 	
 	public static void waitAndClick(WebDriver driver, By by) {
+		waitAndClick( new WebDriverWait(driver, 10),driver,by);
+	}
+	
+	public static void waitAndClick(WebDriverWait wait, WebDriver driver, By by) {
 		try {
-			new WebDriverWait(driver, 30).until((Function< WebDriver, WebElement>) ExpectedConditions.elementToBeClickable(by)).click();
+			wait.until((Function< WebDriver, WebElement>) ExpectedConditions.elementToBeClickable(by)).click();
 		}catch(ElementClickInterceptedException e) {
 			clickPopUP(driver);
 		}
@@ -81,7 +86,24 @@ public class seleniumCommon {
 	public static void jsClick(WebDriver driver, By by) {
 		((JavascriptExecutor) driver).executeScript("arguments[0].click();", driver.findElement(by));
 	}
-
+	public static WebElement mustExist(WebElement parentElement, By by) {
+		boolean result = false;
+		int attempts = 0;
+		WebElement ele=null;
+		while (attempts < 3) {
+			try {
+				ele = parentElement.findElement(by);
+				result = true;
+				break;
+			} catch (NoSuchElementException|StaleElementReferenceException | TimeoutException e) {
+				e.printStackTrace();
+			}
+			attempts++;
+		}
+		return ele;
+	}
+	
+	
 	public static boolean mustDo(WebDriver driver, By by) {
 		boolean result = false;
 		int attempts = 0;
@@ -90,7 +112,7 @@ public class seleniumCommon {
 				waitAndClick(driver, by);
 				result = true;
 				break;
-			} catch (StaleElementReferenceException | TimeoutException e) {
+			} catch (NoSuchElementException|StaleElementReferenceException | TimeoutException e) {
 				e.printStackTrace();
 			}
 			attempts++;

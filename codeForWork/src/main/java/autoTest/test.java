@@ -6,19 +6,29 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 import java.util.ResourceBundle.Control;
+
+import dataStructure.PropertiesSetting;
+
 import java.util.Set;
 
 public class test {
 	static String defaultFilePath = "/花蓮";
 
-	public static void main(String[] args) {
-		test app = new test();
-		app.printAll("config.properties");
+	public static void main(String[] args) throws IOException {
+//		test app = new test();
+//		app.printAll("config.properties");
+		PropertiesSetting app = new PropertiesSetting();
+		String[] desiredCounties = PropertiesSetting
+				.getPropertyByKey((PropertiesSetting.getPropertyByKey("臺南") + ".desiredCounty")).split("#");
+		Arrays.asList(desiredCounties).forEach((s)->{
+			System.out.println(s);
+		});
 	}
 
 	private void printAll(String filename) {
